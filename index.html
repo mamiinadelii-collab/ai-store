@@ -62,6 +62,7 @@
                 id: 1,
                 name: "ChatGPT Plus",
                 provider: "OpenAI",
+                type: "email_based", // نوع محصول
                 price: 670000,
                 originalPrice: 2850000,
                 period: "ماهانه",
@@ -76,6 +77,7 @@
                 id: 3,
                 name: "Gemini Advanced",
                 provider: "Google",
+                type: "email_based",
                 price: 650000,
                 originalPrice: 3000000,
                 period: "ماهانه",
@@ -90,6 +92,7 @@
                 id: 2,
                 name: "Telegram Premium",
                 provider: "Telegram",
+                type: "id_based", // نوع محصول
                 price: 3000000,
                 originalPrice: null,
                 period: "۳ ماهه",
@@ -123,8 +126,10 @@
 
             const [notification, setNotification] = useState(null);
 
+            // استیت‌های فرم
             const [customerUsername, setCustomerUsername] = useState("");
             const [customerEmail, setCustomerEmail] = useState("");
+            const [customerTelegramId, setCustomerTelegramId] = useState(""); // استیت جدید برای تلگرام
             const [customerPhone, setCustomerPhone] = useState("");
 
             const [requestedProduct, setRequestedProduct] = useState("");
@@ -146,6 +151,10 @@
 
             const totalPrice = cart.reduce((acc, item) => acc + item.price, 0);
 
+            // بررسی محتویات سبد خرید
+            const hasTelegramProduct = cart.some(item => item.type === 'id_based');
+            const hasEmailProduct = cart.some(item => item.type === 'email_based');
+
             const showNotification = (message, type = "success") => {
                 setNotification({ message, type });
                 setTimeout(() => setNotification(null), 3000);
@@ -154,19 +163,30 @@
             const handleCheckout = () => {
                 if (cart.length === 0) return;
 
+                // 1. بررسی نام کاربری (همیشه اجباری)
                 if (!customerUsername.trim()) {
                     showNotification("لطفا نام کاربری خود را وارد کنید", "error");
                     return;
                 }
                 
-                if (!customerEmail.trim()) {
-                    showNotification("لطفا ایمیل خود را وارد کنید", "error");
-                    return;
+                // 2. بررسی ایمیل (فقط اگر محصول ایمیلی مثل GPT/Gemini باشد)
+                if (hasEmailProduct) {
+                    if (!customerEmail.trim()) {
+                        showNotification("لطفا ایمیل خود را برای فعال‌سازی وارد کنید", "error");
+                        return;
+                    }
+                    if (!isValidEmail(customerEmail)) {
+                        showNotification("فرمت ایمیل صحیح نیست (مثال: name@gmail.com)", "error");
+                        return;
+                    }
                 }
 
-                if (!isValidEmail(customerEmail)) {
-                    showNotification("فرمت ایمیل صحیح نیست (مثال: example@gmail.com)", "error");
-                    return;
+                // 3. بررسی آیدی تلگرام (فقط اگر محصول تلگرامی باشد)
+                if (hasTelegramProduct) {
+                    if (!customerTelegramId.trim()) {
+                        showNotification("لطفا آیدی تلگرام خود را برای فعال‌سازی وارد کنید", "error");
+                        return;
+                    }
                 }
 
                 const itemsList = cart.map((item, index) => 
@@ -175,15 +195,27 @@
 
                 const total = formatPrice(totalPrice);
                 
+                // ساخت بخش اطلاعات کاربر به صورت هوشمند
+                let userInfo = `👤 مشخصات خریدار:\nنام کاربری: ${customerUsername}`;
+                
+                if (hasEmailProduct) {
+                    userInfo += `\nایمیل: ${customerEmail}`;
+                }
+                
+                if (hasTelegramProduct) {
+                    userInfo += `\nآیدی تلگرام: ${customerTelegramId}`;
+                }
+
+                if (customerPhone) {
+                    userInfo += `\nتلفن: ${customerPhone}`;
+                }
+
                 const orderMessage = `پشتیبانی عزیز 👋
 من قصد خرید اشتراک‌های زیر را دارم:
 
 ${itemsList}
 
-👤 مشخصات خریدار:
-نام کاربری: ${customerUsername}
-ایمیل: ${customerEmail}
-${customerPhone ? `تلفن: ${customerPhone}` : ''}
+${userInfo}
 
 💰 مبلغ کل: ${total} تومان
 
@@ -193,8 +225,10 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                 
                 setIsCartOpen(false);
                 setCart([]);
+                // پاکسازی فرم
                 setCustomerUsername("");
                 setCustomerEmail("");
+                setCustomerTelegramId("");
                 setCustomerPhone("");
                 
                 setSuccessModalType('order');
@@ -562,7 +596,7 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                                             ))}
                                         </div>
 
-                                        {/* --- فرم اطلاعات خریدار --- */}
+                                        {/* --- فرم اطلاعات خریدار (هوشمند) --- */}
                                         <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 mb-4">
                                             <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                                                 <Icon name="user" className="w-4 h-4 text-blue-400" />
@@ -578,20 +612,43 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                                                         className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder-gray-500"
                                                     />
                                                 </div>
-                                                <div>
-                                                    <input 
-                                                        type="email" 
-                                                        placeholder="ایمیل دقیق (برای فعال‌سازی) *" 
-                                                        value={customerEmail}
-                                                        onChange={(e) => setCustomerEmail(e.target.value)}
-                                                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder-gray-500 dir-ltr text-left"
-                                                        style={{direction: 'ltr'}}
-                                                    />
-                                                    <p className="text-[11px] text-yellow-500 mt-1.5 leading-tight flex items-start gap-1">
-                                                        <Icon name="alert-triangle" className="w-3 h-3 shrink-0 mt-0.5" />
-                                                        اگر ایمیل دقیق نباشد مشکل در ثبت نام شما پیش می‌آید و ثبت نمی‌شود پس ایمیل خود را دقیق بنویسید.
-                                                    </p>
-                                                </div>
+                                                
+                                                {/* --- فیلد ایمیل (فقط اگر محصول ایمیلی مثل GPT باشد) --- */}
+                                                {hasEmailProduct && (
+                                                    <div>
+                                                        <input 
+                                                            type="email" 
+                                                            placeholder="ایمیل دقیق (برای فعال‌سازی) *" 
+                                                            value={customerEmail}
+                                                            onChange={(e) => setCustomerEmail(e.target.value)}
+                                                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder-gray-500 dir-ltr text-left"
+                                                            style={{direction: 'ltr'}}
+                                                        />
+                                                        <p className="text-[11px] text-yellow-500 mt-1.5 leading-tight flex items-start gap-1">
+                                                            <Icon name="alert-triangle" className="w-3 h-3 shrink-0 mt-0.5" />
+                                                            اگر ایمیل دقیق نباشد مشکل در ثبت نام شما پیش می‌آید و ثبت نمی‌شود پس ایمیل خود را دقیق بنویسید.
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* --- فیلد تلگرام (فقط اگر تلگرام باشد) --- */}
+                                                {hasTelegramProduct && (
+                                                    <div>
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="آیدی تلگرام (برای گیفت) *" 
+                                                            value={customerTelegramId}
+                                                            onChange={(e) => setCustomerTelegramId(e.target.value)}
+                                                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder-gray-500 dir-ltr text-left"
+                                                            style={{direction: 'ltr'}}
+                                                        />
+                                                        <p className="text-[11px] text-yellow-500 mt-1.5 leading-tight flex items-start gap-1">
+                                                            <Icon name="alert-triangle" className="w-3 h-3 shrink-0 mt-0.5" />
+                                                            حتماً آیدی تلگرام خود را دقیق وارد کنید (فرمت ایمیل لازم نیست، فقط آیدی).
+                                                        </p>
+                                                    </div>
+                                                )}
+
                                                 <div>
                                                     <input 
                                                         type="tel" 
