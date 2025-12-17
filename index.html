@@ -28,6 +28,16 @@
 
     <!-- لود کردن آیکون‌ها -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-modal {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans">
     <div id="root"></div>
@@ -35,7 +45,6 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // آیکون‌ها به صورت کامپوننت ساده شده برای اجرا در مرورگر
         const Icon = ({ name, className }) => {
             useEffect(() => {
                 lucide.createIcons();
@@ -52,7 +61,8 @@
                 price: 670000,
                 originalPrice: 2850000,
                 period: "ماهانه",
-                description: "فعال‌سازی قانونی روی جیمیل شخصی شما",
+                // تاکید بر اختصاصی بودن فقط اینجا ذکر شده است
+                description: "فعال‌سازی قانونی روی جیمیل شخصی شما (کاملا اختصاصی)",
                 features: ["دسترسی کامل به GPT-4o", "ساخت عکس با DALL·E 3", "فعال‌سازی روی ایمیل شخصی", "پایدار و بدون قطعی"],
                 color: "from-green-500 to-emerald-700",
                 iconName: "message-square",
@@ -74,7 +84,6 @@
             }
         ];
 
-        // --- تنظیمات پشتیبانی ---
         const SUPPORT_ID = "ChatGptsupp";
         const SUPPORT_URL = `https://t.me/${SUPPORT_ID}`;
 
@@ -86,6 +95,7 @@
             const [cart, setCart] = useState([]);
             const [isCartOpen, setIsCartOpen] = useState(false);
             const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
             const [notification, setNotification] = useState(null);
 
             const addToCart = (product) => {
@@ -119,7 +129,7 @@
 
                 const total = formatPrice(totalPrice);
                 
-                const orderMessage = `سلام پشتیبانی عزیز 👋
+                const orderMessage = `پشتیبانی عزیز 👋
 من قصد خرید اشتراک‌های زیر را دارم:
 
 ${itemsList}
@@ -129,16 +139,14 @@ ${itemsList}
 لطفا شماره کارت و مراحل پرداخت را ارسال کنید.`;
 
                 navigator.clipboard.writeText(orderMessage).then(() => {
-                    showNotification("سفارش کپی شد! در حال انتقال به تلگرام...");
+                    // Copied
                 }).catch(err => {
                     console.error('Failed to copy: ', err);
                 });
                 
-                setTimeout(() => {
-                    window.open(SUPPORT_URL, '_blank');
-                    setCart([]);
-                    setIsCartOpen(false);
-                }, 1000);
+                setIsCartOpen(false);
+                setCart([]); 
+                setIsSuccessModalOpen(true);
             };
 
             useEffect(() => {
@@ -149,9 +157,43 @@ ${itemsList}
                 <div className="min-h-screen bg-gray-950 text-gray-100 font-sans pb-20 md:pb-0 relative">
                     
                     {notification && (
-                        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg z-50 animate-bounce text-sm md:text-base whitespace-nowrap flex items-center gap-2">
+                        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg z-[70] animate-bounce text-sm md:text-base whitespace-nowrap flex items-center gap-2">
                             <Icon name="check" className="w-4 h-4" />
                             {notification}
+                        </div>
+                    )}
+
+                    {isSuccessModalOpen && (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 px-6">
+                            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsSuccessModalOpen(false)}></div>
+                            <div className="relative bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl animate-modal">
+                                <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 ring-4 ring-green-500/10">
+                                    <Icon name="check" className="w-10 h-10 text-green-500" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-4">متن سفارش کپی شد! ✅</h3>
+                                <p className="text-gray-300 mb-8 leading-relaxed text-sm">
+                                    فاکتور شما در حافظه کپی شد.
+                                    <br/>
+                                    کافیست وارد تلگرام شوید و در چت پشتیبانی گزینه 
+                                    <span className="font-bold text-white mx-1 bg-gray-800 px-2 py-0.5 rounded border border-gray-700">Paste</span>
+                                    را بزنید.
+                                </p>
+                                
+                                <button 
+                                    onClick={() => window.open(SUPPORT_URL, '_blank')}
+                                    className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white shadow-lg hover:shadow-blue-500/25 transition flex items-center justify-center gap-2 mb-3 transform hover:-translate-y-1"
+                                >
+                                    <Icon name="send" className="w-5 h-5" />
+                                    رفتن به تلگرام برای ارسال
+                                </button>
+                                
+                                <button 
+                                    onClick={() => setIsSuccessModalOpen(false)}
+                                    className="w-full py-3 text-gray-500 hover:text-white transition text-sm"
+                                >
+                                    بستن پنجره
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -323,8 +365,8 @@ ${itemsList}
                                     <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4 text-blue-400">
                                         <Icon name="shield-check" className="w-8 h-8" />
                                     </div>
-                                    <h3 className="text-lg font-bold mb-2 text-white">کاملا قانونی و اختصاصی</h3>
-                                    <p className="text-sm text-gray-400">فعال‌سازی روی ایمیل شخصی شما انجام می‌شود و اکانت اشتراکی نیست.</p>
+                                    <h3 className="text-lg font-bold mb-2 text-white">کاملا قانونی</h3>
+                                    <p className="text-sm text-gray-400">تمام اشتراک‌ها از روش‌های قانونی پرداخت و فعال‌سازی می‌شوند.</p>
                                 </div>
                                 <div className="flex flex-col items-center text-center p-4">
                                     <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mb-4 text-green-400">
@@ -337,8 +379,8 @@ ${itemsList}
                                     <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-4 text-purple-400">
                                         <Icon name="headphones" className="w-8 h-8" />
                                     </div>
-                                    <h3 className="text-lg font-bold mb-2 text-white">پشتیبانی تا روز آخر</h3>
-                                    <p className="text-sm text-gray-400">تضمین عملکرد صحیح اکانت تا آخرین روز اشتراک شما.</p>
+                                    <h3 className="text-lg font-bold mb-2 text-white">پشتیبانی دائمی</h3>
+                                    <p className="text-sm text-gray-400">پشتیبانی فعال و پاسخگو فقط در تلگرام.</p>
                                 </div>
                             </div>
                         </div>
@@ -416,15 +458,15 @@ ${itemsList}
                                             
                                             <div className="bg-blue-900/20 border border-blue-500/30 p-3 rounded-lg mb-4 text-xs text-blue-200 flex items-start gap-2">
                                                 <Icon name="message-circle" className="w-4 h-4 shrink-0 mt-0.5" />
-                                                با کلیک روی دکمه زیر، لیست سفارش شما کپی شده و تلگرام پشتیبانی باز می‌شود. لطفا متن کپی شده را برای ما ارسال کنید.
+                                                با زدن دکمه زیر، فاکتور کپی شده و پنجره راهنما باز می‌شود.
                                             </div>
 
                                             <button 
                                                 className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white shadow-lg hover:shadow-blue-500/25 transition transform active:scale-95 flex items-center justify-center gap-2"
                                                 onClick={handleCheckout}
                                             >
-                                                <Icon name="send" className="w-5 h-5" />
-                                                تکمیل خرید در تلگرام
+                                                <Icon name="clipboard-copy" className="w-5 h-5" />
+                                                کپی فاکتور و ادامه
                                             </button>
                                         </div>
                                     </>
@@ -461,4 +503,5 @@ ${itemsList}
     </script>
 </body>
 </html>
+
 
