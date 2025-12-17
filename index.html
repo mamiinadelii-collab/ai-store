@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فروشگاه هوش مصنوعی | AI Market</title>
+    <title>GptSaz | فروشگاه هوش مصنوعی</title>
     
     <!-- تنظیمات Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -73,7 +73,7 @@
                 discountBadge: "76% تخفیف"
             },
             {
-                id: 3, // ID جدید برای جمینای
+                id: 3,
                 name: "Gemini Advanced",
                 provider: "Google",
                 price: 650000,
@@ -118,18 +118,15 @@
             const [isCartOpen, setIsCartOpen] = useState(false);
             const [isMenuOpen, setIsMenuOpen] = useState(false);
             
-            // مدیریت مودال و نوع پیام موفقیت
             const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-            const [successModalType, setSuccessModalType] = useState('order'); // 'order' or 'request'
+            const [successModalType, setSuccessModalType] = useState('order'); 
 
             const [notification, setNotification] = useState(null);
 
-            // استیت‌های فرم خرید
             const [customerUsername, setCustomerUsername] = useState("");
             const [customerEmail, setCustomerEmail] = useState("");
             const [customerPhone, setCustomerPhone] = useState("");
 
-            // استیت فرم درخواست محصول جدید
             const [requestedProduct, setRequestedProduct] = useState("");
 
             const addToCart = (product) => {
@@ -154,7 +151,6 @@
                 setTimeout(() => setNotification(null), 3000);
             };
 
-            // --- ثبت سفارش نهایی ---
             const handleCheckout = () => {
                 if (cart.length === 0) return;
 
@@ -205,7 +201,6 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                 setIsSuccessModalOpen(true);
             };
 
-            // --- ثبت درخواست محصول جدید ---
             const handleProductRequest = () => {
                 if (!requestedProduct.trim()) {
                     showNotification("لطفا نام اشتراک مد نظر را بنویسید", "error");
@@ -240,7 +235,6 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                         </div>
                     )}
 
-                    {/* --- مودال موفقیت (مشترک برای خرید و درخواست) --- */}
                     {isSuccessModalOpen && (
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 px-6">
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsSuccessModalOpen(false)}></div>
@@ -288,7 +282,7 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                                         <Icon name="cpu" className="w-6 h-6 text-white" />
                                     </div>
                                     <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                                        AI Market
+                                        GptSaz
                                     </span>
                                 </div>
 
