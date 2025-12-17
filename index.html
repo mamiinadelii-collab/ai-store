@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فروشگاه هوش مصنوعی | AI Market</title>
+    
+    <!-- تنظیمات Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Tahoma', 'Arial', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- لود کردن React و ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- لود کردن Babel برای اجرای کد React در مرورگر -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- لود کردن آیکون‌ها -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // آیکون‌ها به صورت کامپوننت ساده شده برای اجرا در مرورگر
+        const Icon = ({ name, className }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name]);
+            return <i data-lucide={name} className={className}></i>;
+        };
+
+        // --- داده‌های محصولات ---
+        const products = [
+            {
+                id: 1,
+                name: "ChatGPT Plus",
+                provider: "OpenAI",
+                price: 670000,
+                originalPrice: 2850000,
+                period: "ماهانه",
+                description: "فعال‌سازی قانونی روی جیمیل شخصی شما",
+                features: ["دسترسی کامل به GPT-4o", "ساخت عکس با DALL·E 3", "فعال‌سازی روی ایمیل شخصی", "پایدار و بدون قطعی"],
+                color: "from-green-500 to-emerald-700",
+                iconName: "message-square",
+                popular: true,
+                discountBadge: "76% تخفیف"
+            },
+            {
+                id: 2,
+                name: "Telegram Premium",
+                provider: "Telegram",
+                price: 3000000,
+                originalPrice: null,
+                period: "۳ ماهه",
+                description: "گیفت قانونی تلگرام - تحویل فوری",
+                features: ["آپلود فایل تا ۴ گیگابایت", "سرعت دانلود دو برابر", "تبدیل صدا به متن", "نشان تایید و ایموجی‌های متحرک"],
+                color: "from-blue-400 to-blue-600",
+                iconName: "send",
+                popular: false
+            }
+        ];
+
+        // --- تنظیمات پشتیبانی ---
+        const SUPPORT_ID = "ChatGptsupp";
+        const SUPPORT_URL = `https://t.me/${SUPPORT_ID}`;
+
+        const formatPrice = (price) => {
+            return new Intl.NumberFormat('fa-IR').format(price);
+        };
+
+        function App() {
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [notification, setNotification] = useState(null);
+
+            const addToCart = (product) => {
+                const existingItem = cart.find(item => item.id === product.id);
+                if (existingItem) {
+                    showNotification("این اشتراک قبلاً در سبد خرید وجود دارد");
+                    return;
+                }
+                setCart([...cart, product]);
+                showNotification(`${product.name} به سبد خرید اضافه شد`);
+                setIsCartOpen(true);
+            };
+
+            const removeFromCart = (id) => {
+                setCart(cart.filter(item => item.id !== id));
+            };
+
+            const totalPrice = cart.reduce((acc, item) => acc + item.price, 0);
+
+            const showNotification = (message) => {
+                setNotification(message);
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            const handleCheckout = () => {
+                if (cart.length === 0) return;
+
+                const itemsList = cart.map((item, index) => 
+                    `${index + 1}. ${item.name} (${item.period}) - ${formatPrice(item.price)} تومان`
+                ).join('\n');
+
+                const total = formatPrice(totalPrice);
+                
+                const orderMessage = `سلام پشتیبانی عزیز 👋
+من قصد خرید اشتراک‌های زیر را دارم:
+
+${itemsList}
+
+💰 مبلغ کل: ${total} تومان
+
+لطفا شماره کارت و مراحل پرداخت را ارسال کنید.`;
+
+                navigator.clipboard.writeText(orderMessage).then(() => {
+                    showNotification("سفارش کپی شد! در حال انتقال به تلگرام...");
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+                
+                setTimeout(() => {
+                    window.open(SUPPORT_URL, '_blank');
+                    setCart([]);
+                    setIsCartOpen(false);
+                }, 1000);
+            };
+
+            useEffect(() => {
+                lucide.createIcons();
+            });
+
+            return (
+                <div className="min-h-screen bg-gray-950 text-gray-100 font-sans pb-20 md:pb-0 relative">
+                    
+                    {notification && (
+                        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full shadow-lg z-50 animate-bounce text-sm md:text-base whitespace-nowrap flex items-center gap-2">
+                            <Icon name="check" className="w-4 h-4" />
+                            {notification}
+                        </div>
+                    )}
+
+                    <nav className="sticky top-0 z-40 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-16">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-gradient-to-tr from-blue-500 to-purple-600 p-2 rounded-lg">
+                                        <Icon name="cpu" className="w-6 h-6 text-white" />
+                                    </div>
+                                    <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                                        AI Market
+                                    </span>
+                                </div>
+
+                                <div className="hidden md:flex items-center space-x-8 space-x-reverse">
+                                    <a href="#" className="text-gray-300 hover:text-white transition">خانه</a>
+                                    <a href="#products" className="text-gray-300 hover:text-white transition">اشتراک‌ها</a>
+                                    <a href={SUPPORT_URL} target="_blank" rel="noreferrer" className="text-gray-300 hover:text-blue-400 transition flex items-center gap-1">
+                                        <Icon name="message-circle" className="w-4 h-4" />
+                                        پشتیبانی تلگرام
+                                    </a>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => setIsCartOpen(true)}
+                                        className="relative p-2 text-gray-300 hover:text-white transition bg-gray-800 rounded-full hover:bg-gray-700"
+                                    >
+                                        <Icon name="shopping-cart" className="w-6 h-6" />
+                                        {cart.length > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full animate-pulse">
+                                                {cart.length.toLocaleString('fa-IR')}
+                                            </span>
+                                        )}
+                                    </button>
+                                    
+                                    <button 
+                                        className="md:hidden p-2 text-gray-300"
+                                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                    >
+                                        <Icon name={isMenuOpen ? "x" : "menu"} className="w-6 h-6" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {isMenuOpen && (
+                            <div className="md:hidden bg-gray-900 border-b border-gray-800 p-4 space-y-2">
+                                <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-800">خانه</a>
+                                <a href="#products" className="block px-3 py-2 rounded-md hover:bg-gray-800">اشتراک‌ها</a>
+                                <a href={SUPPORT_URL} target="_blank" rel="noreferrer" className="block px-3 py-2 rounded-md bg-blue-600/10 text-blue-400 border border-blue-600/20">
+                                    ارتباط با پشتیبانی (@{SUPPORT_ID})
+                                </a>
+                            </div>
+                        )}
+                    </nav>
+
+                    <header className="relative overflow-hidden pt-12 pb-20 lg:pt-24">
+                        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl"></div>
+                        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl"></div>
+                        
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                            <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium hover:bg-blue-500/20 transition cursor-pointer" onClick={() => window.open(SUPPORT_URL, '_blank')}>
+                                <Icon name="message-circle" className="w-4 h-4" />
+                                پشتیبانی مستقیم: @{SUPPORT_ID}
+                            </div>
+                            <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
+                                مرجع تخصصی خرید <br/>
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">اکانت‌های هوش مصنوعی</span>
+                            </h1>
+                            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10">
+                                خرید آسان و تحویل فوری در تلگرام. برای خرید مستقیم یا مشاوره روی دکمه زیر کلیک کنید.
+                            </p>
+                            <div className="flex flex-col sm:flex-row justify-center gap-4">
+                                <a href="#products" className="px-8 py-4 rounded-full bg-white text-gray-900 font-bold text-lg hover:bg-gray-200 transition flex items-center justify-center gap-2 shadow-lg shadow-white/10">
+                                    مشاهده پلن‌ها
+                                    <Icon name="arrow-left" className="w-5 h-5" />
+                                </a>
+                                <button 
+                                    onClick={() => window.open(SUPPORT_URL, '_blank')}
+                                    className="px-8 py-4 rounded-full bg-blue-600 text-white font-bold text-lg hover:bg-blue-500 transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                                >
+                                    <Icon name="send" className="w-5 h-5" />
+                                    خرید مستقیم از تلگرام
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <section id="products" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold mb-4">پلن‌های موجود</h2>
+                            <p className="text-gray-400">سفارش خود را ثبت کنید تا در تلگرام تحویل بگیرید</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                            {products.map((product) => (
+                                <div key={product.id} className="group relative bg-gray-900 border border-gray-800 rounded-3xl overflow-hidden hover:border-gray-600 transition duration-300 hover:shadow-2xl hover:shadow-purple-900/10 flex flex-col">
+                                    <div className={`h-28 bg-gradient-to-r ${product.color} p-6 flex items-start justify-between relative overflow-hidden`}>
+                                        <div className="relative z-10">
+                                            <div className="bg-white/20 p-2 rounded-lg inline-block mb-2">
+                                                <Icon name={product.iconName} className="w-8 h-8 text-white" />
+                                            </div>
+                                            <h3 className="text-2xl font-bold text-white">{product.name}</h3>
+                                        </div>
+                                        
+                                        {product.popular && (
+                                            <div className="absolute top-4 left-4 bg-yellow-400 text-yellow-900 text-xs px-3 py-1 rounded-full font-bold shadow-lg z-10">
+                                                پیشنهاد ویژه
+                                            </div>
+                                        )}
+                                        
+                                         <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-4 translate-y-4">
+                                            <Icon name={product.iconName} className="w-32 h-32" />
+                                         </div>
+                                    </div>
+
+                                    <div className="p-6 flex-1 flex flex-col">
+                                        <div className="mb-4">
+                                            <p className="text-gray-300 font-medium mb-1">{product.description}</p>
+                                        </div>
+
+                                        <div className="mb-6 bg-gray-800/50 p-4 rounded-xl border border-gray-700/50">
+                                            {product.originalPrice && (
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-gray-500 line-through text-sm decoration-red-500/60 decoration-2">
+                                                        {formatPrice(product.originalPrice)}
+                                                    </span>
+                                                    <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-md">
+                                                        {product.discountBadge}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-3xl font-bold text-white">{formatPrice(product.price)}</span>
+                                                <span className="text-gray-400 text-sm">تومان / {product.period}</span>
+                                            </div>
+                                        </div>
+
+                                        <ul className="space-y-4 mb-8 flex-1">
+                                            {product.features.map((feature, idx) => (
+                                                <li key={idx} className="flex items-start text-sm text-gray-300">
+                                                    <div className="bg-green-500/20 p-1 rounded-full ml-3 shrink-0">
+                                                         <Icon name="check" className="w-3 h-3 text-green-500" />
+                                                    </div>
+                                                    {feature}
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        <button 
+                                            onClick={() => addToCart(product)}
+                                            className="w-full py-4 rounded-xl bg-white text-gray-900 hover:bg-gray-200 font-bold transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-white/5"
+                                        >
+                                            <Icon name="shopping-cart" className="w-5 h-5" />
+                                            افزودن به سبد
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                    
+                    <section id="features" className="py-16 bg-gray-900/30 border-t border-gray-800">
+                        <div className="max-w-7xl mx-auto px-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="flex flex-col items-center text-center p-4">
+                                    <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4 text-blue-400">
+                                        <Icon name="shield-check" className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-lg font-bold mb-2 text-white">کاملا قانونی و اختصاصی</h3>
+                                    <p className="text-sm text-gray-400">فعال‌سازی روی ایمیل شخصی شما انجام می‌شود و اکانت اشتراکی نیست.</p>
+                                </div>
+                                <div className="flex flex-col items-center text-center p-4">
+                                    <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mb-4 text-green-400">
+                                        <Icon name="zap" className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-lg font-bold mb-2 text-white">تحویل سریع</h3>
+                                    <p className="text-sm text-gray-400">پس از ثبت سفارش، فرآیند فعال‌سازی توسط کارشناسان ما آغاز می‌شود.</p>
+                                </div>
+                                <div className="flex flex-col items-center text-center p-4">
+                                    <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-4 text-purple-400">
+                                        <Icon name="headphones" className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-lg font-bold mb-2 text-white">پشتیبانی تا روز آخر</h3>
+                                    <p className="text-sm text-gray-400">تضمین عملکرد صحیح اکانت تا آخرین روز اشتراک شما.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-4 z-30 flex justify-between items-center px-6">
+                        <div className="flex flex-col">
+                            <span className="text-xs text-gray-400">پشتیبانی آنلاین</span>
+                            <span className="text-sm font-bold text-blue-400" dir="ltr">@{SUPPORT_ID}</span>
+                        </div>
+                        <button 
+                            onClick={() => window.open(SUPPORT_URL, '_blank')}
+                            className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-blue-500 transition text-sm flex items-center gap-2"
+                        >
+                            <Icon name="send" className="w-4 h-4" />
+                            پیام دهید
+                        </button>
+                    </div>
+
+                    {isCartOpen && (
+                        <div className="fixed inset-0 z-50 flex justify-end">
+                            <div 
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                                onClick={() => setIsCartOpen(false)}
+                            ></div>
+
+                            <div className="relative w-full max-w-md bg-gray-900 h-full shadow-2xl p-6 flex flex-col border-r border-gray-800 animate-in slide-in-from-left duration-300">
+                                <div className="flex items-center justify-between mb-8 border-b border-gray-800 pb-4">
+                                    <h2 className="text-xl font-bold flex items-center gap-2">
+                                        <Icon name="shopping-cart" className="w-6 h-6 text-blue-500" />
+                                        سبد خرید
+                                    </h2>
+                                    <button onClick={() => setIsCartOpen(false)} className="text-gray-400 hover:text-white">
+                                        <Icon name="x" className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                {cart.length === 0 ? (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                                        <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                                            <Icon name="shopping-cart" className="w-10 h-10 opacity-50" />
+                                        </div>
+                                        <p>سبد خرید شما خالی است</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="flex-1 overflow-y-auto space-y-4">
+                                            {cart.map((item, index) => (
+                                                <div key={index} className="flex items-center gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700">
+                                                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center shrink-0`}>
+                                                        <Icon name={item.iconName} className="w-6 h-6 text-white" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="font-bold text-sm text-white">{item.name}</h4>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                             <span className="text-xs text-gray-400 bg-gray-700 px-2 py-0.5 rounded">{item.period}</span>
+                                                        </div>
+                                                        <p className="text-sm font-bold text-blue-400 mt-2">{formatPrice(item.price)} تومان</p>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => removeFromCart(item.id)}
+                                                        className="p-2 hover:bg-red-500/20 rounded-full text-gray-500 hover:text-red-500 transition"
+                                                    >
+                                                        <Icon name="x" className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="mt-6 border-t border-gray-800 pt-6">
+                                            <div className="flex justify-between items-center mb-6">
+                                                <span className="text-gray-400">مبلغ قابل پرداخت:</span>
+                                                <span className="text-2xl font-bold text-white">{formatPrice(totalPrice)} <span className="text-sm font-normal text-gray-500">تومان</span></span>
+                                            </div>
+                                            
+                                            <div className="bg-blue-900/20 border border-blue-500/30 p-3 rounded-lg mb-4 text-xs text-blue-200 flex items-start gap-2">
+                                                <Icon name="message-circle" className="w-4 h-4 shrink-0 mt-0.5" />
+                                                با کلیک روی دکمه زیر، لیست سفارش شما کپی شده و تلگرام پشتیبانی باز می‌شود. لطفا متن کپی شده را برای ما ارسال کنید.
+                                            </div>
+
+                                            <button 
+                                                className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white shadow-lg hover:shadow-blue-500/25 transition transform active:scale-95 flex items-center justify-center gap-2"
+                                                onClick={handleCheckout}
+                                            >
+                                                <Icon name="send" className="w-5 h-5" />
+                                                تکمیل خرید در تلگرام
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <footer className="bg-gray-950 border-t border-gray-900 py-10 mt-12 pb-24 md:pb-10">
+                        <div className="max-w-7xl mx-auto px-4 text-center">
+                            <div className="flex flex-col items-center justify-center gap-4 mb-8">
+                                <h3 className="text-xl font-bold text-white">نیاز به راهنمایی دارید؟</h3>
+                                <a 
+                                    href={SUPPORT_URL} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition text-lg font-medium bg-blue-500/10 px-6 py-2 rounded-full border border-blue-500/20"
+                                >
+                                    <Icon name="message-circle" className="w-5 h-5" />
+                                    پشتیبانی تلگرام: @{SUPPORT_ID}
+                                </a>
+                            </div>
+                            <p className="text-gray-600 text-sm">
+                                © 2024 تمامی حقوق محفوظ است.
+                            </p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
