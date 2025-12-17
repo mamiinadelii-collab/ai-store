@@ -37,20 +37,10 @@
         .animate-modal {
             animation: fadeIn 0.3s ease-out forwards;
         }
-        /* استایل اختصاصی برای اسکرول بار زیبا */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #111827; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563; 
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans">
@@ -83,6 +73,20 @@
                 discountBadge: "76% تخفیف"
             },
             {
+                id: 3, // ID جدید برای جمینای
+                name: "Gemini Advanced",
+                provider: "Google",
+                price: 650000,
+                originalPrice: 3000000,
+                period: "ماهانه",
+                description: "فعال‌سازی روی اکانت گوگل شخصی شما",
+                features: ["دسترسی به مدل Ultra 1.0", "۲ ترابایت فضای ابری Google One", "یکپارچگی با Docs و Gmail", "تحلیل پیشرفته داده‌ها"],
+                color: "from-blue-500 to-cyan-600",
+                iconName: "sparkles",
+                popular: false,
+                discountBadge: "78% تخفیف"
+            },
+            {
                 id: 2,
                 name: "Telegram Premium",
                 provider: "Telegram",
@@ -91,7 +95,7 @@
                 period: "۳ ماهه",
                 description: "گیفت قانونی تلگرام - تحویل فوری",
                 features: ["آپلود فایل تا ۴ گیگابایت", "سرعت دانلود دو برابر", "تبدیل صدا به متن", "نشان تایید و ایموجی‌های متحرک"],
-                color: "from-blue-400 to-blue-600",
+                color: "from-blue-600 to-indigo-700",
                 iconName: "send",
                 popular: false
             }
@@ -104,17 +108,29 @@
             return new Intl.NumberFormat('fa-IR').format(price);
         };
 
+        const isValidEmail = (email) => {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        };
+
         function App() {
             const [cart, setCart] = useState([]);
             const [isCartOpen, setIsCartOpen] = useState(false);
             const [isMenuOpen, setIsMenuOpen] = useState(false);
+            
+            // مدیریت مودال و نوع پیام موفقیت
             const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+            const [successModalType, setSuccessModalType] = useState('order'); // 'order' or 'request'
+
             const [notification, setNotification] = useState(null);
 
-            // --- استیت‌های فرم اطلاعات کاربر ---
-            const [customerName, setCustomerName] = useState("");
+            // استیت‌های فرم خرید
+            const [customerUsername, setCustomerUsername] = useState("");
             const [customerEmail, setCustomerEmail] = useState("");
             const [customerPhone, setCustomerPhone] = useState("");
+
+            // استیت فرم درخواست محصول جدید
+            const [requestedProduct, setRequestedProduct] = useState("");
 
             const addToCart = (product) => {
                 const existingItem = cart.find(item => item.id === product.id);
@@ -138,17 +154,22 @@
                 setTimeout(() => setNotification(null), 3000);
             };
 
+            // --- ثبت سفارش نهایی ---
             const handleCheckout = () => {
                 if (cart.length === 0) return;
 
-                // --- اعتبارسنجی فرم ---
-                if (!customerName.trim()) {
-                    showNotification("لطفا نام خود را وارد کنید", "error");
-                    // اسکرول به پایین سبد خرید برای دیدن فرم (در صورت نیاز)
+                if (!customerUsername.trim()) {
+                    showNotification("لطفا نام کاربری خود را وارد کنید", "error");
                     return;
                 }
+                
                 if (!customerEmail.trim()) {
                     showNotification("لطفا ایمیل خود را وارد کنید", "error");
+                    return;
+                }
+
+                if (!isValidEmail(customerEmail)) {
+                    showNotification("فرمت ایمیل صحیح نیست (مثال: example@gmail.com)", "error");
                     return;
                 }
 
@@ -158,14 +179,13 @@
 
                 const total = formatPrice(totalPrice);
                 
-                // ساخت متن نهایی با اطلاعات کاربر
                 const orderMessage = `پشتیبانی عزیز 👋
 من قصد خرید اشتراک‌های زیر را دارم:
 
 ${itemsList}
 
 👤 مشخصات خریدار:
-نام: ${customerName}
+نام کاربری: ${customerUsername}
 ایمیل: ${customerEmail}
 ${customerPhone ? `تلفن: ${customerPhone}` : ''}
 
@@ -173,19 +193,33 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
 
 لطفا شماره کارت و مراحل پرداخت را ارسال کنید.`;
 
-                navigator.clipboard.writeText(orderMessage).then(() => {
-                    // Copied
-                }).catch(err => {
-                    console.error('Failed to copy: ', err);
-                });
+                navigator.clipboard.writeText(orderMessage).catch(console.error);
                 
                 setIsCartOpen(false);
                 setCart([]);
-                // پاک کردن فرم بعد از ثبت موفق (اختیاری)
-                setCustomerName("");
+                setCustomerUsername("");
                 setCustomerEmail("");
                 setCustomerPhone("");
                 
+                setSuccessModalType('order');
+                setIsSuccessModalOpen(true);
+            };
+
+            // --- ثبت درخواست محصول جدید ---
+            const handleProductRequest = () => {
+                if (!requestedProduct.trim()) {
+                    showNotification("لطفا نام اشتراک مد نظر را بنویسید", "error");
+                    return;
+                }
+
+                const msg = `سلام پشتیبانی 👋
+من درخواست اضافه شدن اشتراک «${requestedProduct}» را دارم.
+لطفا در صورت امکان این سرویس را به سایت اضافه کنید.`;
+
+                navigator.clipboard.writeText(msg).catch(console.error);
+
+                setRequestedProduct("");
+                setSuccessModalType('request');
                 setIsSuccessModalOpen(true);
             };
 
@@ -206,6 +240,7 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                         </div>
                     )}
 
+                    {/* --- مودال موفقیت (مشترک برای خرید و درخواست) --- */}
                     {isSuccessModalOpen && (
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 px-6">
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsSuccessModalOpen(false)}></div>
@@ -213,9 +248,14 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                                 <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 ring-4 ring-green-500/10">
                                     <Icon name="check" className="w-10 h-10 text-green-500" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-4">اطلاعات کپی شد! ✅</h3>
+                                <h3 className="text-2xl font-bold text-white mb-4">
+                                    {successModalType === 'order' ? 'سفارش شما کپی شد! ✅' : 'درخواست شما کپی شد! ✅'}
+                                </h3>
                                 <p className="text-gray-300 mb-8 leading-relaxed text-sm">
-                                    مشخصات و لیست سفارش شما در حافظه کپی شد.
+                                    {successModalType === 'order' 
+                                        ? 'مشخصات و لیست سفارش در حافظه کپی شد.' 
+                                        : 'متن درخواست اشتراک جدید در حافظه کپی شد.'
+                                    }
                                     <br/>
                                     کافیست در تلگرام پشتیبانی گزینه 
                                     <span className="font-bold text-white mx-1 bg-gray-800 px-2 py-0.5 rounded border border-gray-700">Paste</span>
@@ -255,6 +295,7 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                                 <div className="hidden md:flex items-center space-x-8 space-x-reverse">
                                     <a href="#" className="text-gray-300 hover:text-white transition">خانه</a>
                                     <a href="#products" className="text-gray-300 hover:text-white transition">اشتراک‌ها</a>
+                                    <a href="#request" className="text-gray-300 hover:text-white transition">درخواست اشتراک</a>
                                     <a href={SUPPORT_URL} target="_blank" rel="noreferrer" className="text-gray-300 hover:text-blue-400 transition flex items-center gap-1">
                                         <Icon name="message-circle" className="w-4 h-4" />
                                         پشتیبانی تلگرام
@@ -288,6 +329,7 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                             <div className="md:hidden bg-gray-900 border-b border-gray-800 p-4 space-y-2">
                                 <a href="#" className="block px-3 py-2 rounded-md hover:bg-gray-800">خانه</a>
                                 <a href="#products" className="block px-3 py-2 rounded-md hover:bg-gray-800">اشتراک‌ها</a>
+                                <a href="#request" className="block px-3 py-2 rounded-md hover:bg-gray-800">درخواست اشتراک</a>
                                 <a href={SUPPORT_URL} target="_blank" rel="noreferrer" className="block px-3 py-2 rounded-md bg-blue-600/10 text-blue-400 border border-blue-600/20">
                                     ارتباط با پشتیبانی (@{SUPPORT_ID})
                                 </a>
@@ -333,7 +375,7 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                             <p className="text-gray-400">سفارش خود را ثبت کنید تا در تلگرام تحویل بگیرید</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
                             {products.map((product) => (
                                 <div key={product.id} className="group relative bg-gray-900 border border-gray-800 rounded-3xl overflow-hidden hover:border-gray-600 transition duration-300 hover:shadow-2xl hover:shadow-purple-900/10 flex flex-col">
                                     <div className={`h-28 bg-gradient-to-r ${product.color} p-6 flex items-start justify-between relative overflow-hidden`}>
@@ -398,6 +440,39 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    </section>
+
+                    {/* --- بخش درخواست اشتراک جدید --- */}
+                    <section id="request" className="py-12 bg-gradient-to-b from-gray-900 to-gray-950 border-t border-gray-800">
+                        <div className="max-w-4xl mx-auto px-4 text-center">
+                            <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 backdrop-blur-sm">
+                                <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-purple-400">
+                                    <Icon name="search" className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold mb-3 text-white">اشتراک مورد نظر خود را پیدا نکردید؟</h3>
+                                <p className="text-gray-400 mb-8 max-w-lg mx-auto">
+                                    نام سرویس یا هوش مصنوعی که نیاز دارید را بنویسید و برای ما ارسال کنید. 
+                                    ما به زودی آن را با <span className="text-green-400 font-bold">بهترین قیمت</span> اضافه خواهیم کرد.
+                                </p>
+                                
+                                <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto relative">
+                                    <input 
+                                        type="text" 
+                                        placeholder="نام سرویس (مثلا: Midjourney, Claude...)" 
+                                        value={requestedProduct}
+                                        onChange={(e) => setRequestedProduct(e.target.value)}
+                                        className="w-full bg-gray-900 border border-gray-600 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition placeholder-gray-500"
+                                    />
+                                    <button 
+                                        onClick={handleProductRequest}
+                                        className="whitespace-nowrap bg-purple-600 hover:bg-purple-500 text-white font-bold px-8 py-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20"
+                                    >
+                                        <Icon name="send" className="w-5 h-5" />
+                                        ثبت درخواست
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </section>
                     
@@ -503,9 +578,9 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                                                 <div>
                                                     <input 
                                                         type="text" 
-                                                        placeholder="نام و نام خانوادگی *" 
-                                                        value={customerName}
-                                                        onChange={(e) => setCustomerName(e.target.value)}
+                                                        placeholder="نام کاربری *" 
+                                                        value={customerUsername}
+                                                        onChange={(e) => setCustomerUsername(e.target.value)}
                                                         className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder-gray-500"
                                                     />
                                                 </div>
@@ -532,6 +607,7 @@ ${customerPhone ? `تلفن: ${customerPhone}` : ''}
                                                         className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder-gray-500 dir-ltr text-left"
                                                         style={{direction: 'ltr'}}
                                                     />
+                                                    <p className="text-[10px] text-gray-500 mt-1 mr-1">شماره تماس اختیاری است.</p>
                                                 </div>
                                             </div>
                                         </div>
